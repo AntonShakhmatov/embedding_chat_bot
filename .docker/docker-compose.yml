@@ -1,0 +1,67 @@
+services:
+  php:
+    container_name: example
+    image: example_php
+    build: build/php
+    volumes:
+      - ../:/var/www/html
+    ports:
+      - 80:80
+    environment:
+      - NETTE_DEBUG=1
+      - COMPOSER_AUTH=${COMPOSER_AUTH}
+    links:
+      - database
+
+  database:
+    container_name: example_db
+    image: example_db
+    build: build/database
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: test
+      MYSQL_PASSWORD: test
+      MYSQL_DATABASE: test
+
+  phpmyadmin:
+    image: phpmyadmin
+    ports:
+      - 8080:80
+    environment:
+      - PMA_HOST=database
+      - PMA_USER=test
+      - PMA_PASSWORD=test
+
+  cron:
+    build:
+      context: .
+      dockerfile: ./build/cron/Dockerfile
+    depends_on:
+      - php
+      - database
+    working_dir: /var/www/html
+    volumes:
+      - ../:/var/www/html
+    environment:
+      - TZ=Europe/Prague
+    entrypoint: ["/bin/sh","-c"]
+    command: >
+      echo '* * * * * cd /var/www/html && php bin/console app:embeddings >> /proc/1/fd/1 2>&1' > /etc/crontabs/app
+      && crond -f -l 8
+    restart: unless-stopped
+
+  embeddings:
+    image: python:3.11-slim
+    working_dir: /var/www/html/embedding/server
+    volumes:
+      - ../:/var/www/html
+    command: >
+      sh -lc "pip install -r requirements.txt && python embeddings_api.py"
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - database
+    ports:
+      - "5000:5000"

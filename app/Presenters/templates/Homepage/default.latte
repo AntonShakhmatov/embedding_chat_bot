@@ -1,0 +1,676 @@
+{* This is the welcome page, you can delete it *}
+
+{block content}
+<div id="banner">
+	<h1 n:block=title>Congratulations!</h1>
+</div>
+
+<div id="content">
+	<div class="chatModal">
+		<div class="chatWindow">
+			<div class="chatHeader">
+				<div class="profileSection">
+					<i class="fa fa-robot profileIcon"></i>
+					<h5 class="profileTitle">ChatBot</h5>
+				</div>
+
+				<div class="buttonUp">
+					<button><i class="fa fa-angle-double-up doubleUp"></i></button>
+				</div>
+
+				<div class="buttonDown">
+					<button><i class="fa fa-angle-double-down doubleDown"></i></button>
+				</div>
+	
+				<div class="rightSide">
+					<div class="">
+						<button class="closeChat">
+							<i class="fa fa-angle-down"></i>
+						</button>
+					</div>
+				</div>
+			</div>
+	
+			<div class="chatBody">
+				{snippet chatWindowModalMessagesSnipp}
+					{if isset($chatWindowModalMessages) && $chatWindowModalMessages}     
+						{define chatWindowModalBlock}
+							<div class="message {if in_array($queryChatItemAux->role, ['system','assistant','function','tool'])}chatMessage{/if}">
+								{$queryChatItemAux->text|breaklines|noescape}
+							</div>
+							{if $queryChatItemAux->childs}
+								{foreach $queryChatItemAux->childs as $child}
+									{var $queryChatItemAux = $child}
+									{include chatWindowModalBlock}
+								{/foreach}
+							{/if}
+						{/define}
+						{var $queryChatItemAux = $chatWindowModalMessages}
+						{include chatWindowModalBlock}
+					{/if}
+				{/snippet}
+			</div>                
+	
+			<div class="chatFooter">
+				{snippet chatWindowModalFormSnipp}
+					{form chatWindowModalForm}
+						{* <div class="mb-3" style="font-weight: bold;">
+							<div class="assistant-bubble" id="assistant-hello">
+								Ahoj, jak bych ti mohl pomoct?
+							</div>
+						</div> *}
+						<div class="mb-3">
+							<div class="assistant-bubble" id="assistant-hello"></div>
+						</div>
+						<div class="predefined-dropdown">
+							<div class="dropdown-selected" tabindex="0">
+								<span class="selected-icon">
+									<i class="fa fa-question-circle"></i>
+									<span>Vyber si možnost</span>
+								</span>
+								<i class="fa fa-chevron-down chevron"></i>
+							</div>
+							<div class="dropdown-list">
+								{foreach $form['predefined']->items as $key => $label}
+									<label class="dropdown-option" data-key="{$key}">
+										{input predefined:$key, class => 'd-none'}
+										<span class="icon-option">
+											{if $key === 'produkty'}
+												<i class="fa fa-newspaper"></i>
+											{elseif $key === 'contacts'}
+												<i class="fa fa-address-book"></i>
+											{elseif $key === 'works'}
+												<i class="fa fa-briefcase"></i>
+											{/if}
+											<span>{$label}</span>
+										</span>
+									</label>
+								{/foreach}
+							</div>                                
+						</div>                                                    
+						<div class="d-flex">
+							{input text, class => "form-control me-2", placeholder => "Zadejte dotaz"}
+							<button name="send" type="submit" class="sendButton">
+								<i class="fa fa-paper-plane"></i>
+							</button>
+						</div>
+					{/form}
+					<div class="result-block">{$top5 ?? ''}</div>
+					{* <h1 style="color:#333;">Vysledek:</h1>
+					<div>{$prompt ?? ''}</div> *}
+				{/snippet}
+			</div>
+		</div>
+	</div>
+	
+	<div class="chatButton">
+		<div class="chatText"></div>
+		<div class="chatIcon">
+			<i class="fa fa-comment"></i>
+		</div>
+	</div>	
+</div>
+
+    {* style *}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        div#content{
+            width: 380px;
+            min-width: 320px;
+            max-width: 100vw;
+            position: fixed;
+            right: 28px;
+            bottom: 90px;
+            z-index: 1050;
+            background: #fff;
+            border-radius: 22px;
+            box-shadow: 0 6px 36px 0 #14458921;
+            overflow: hidden;
+            transition: box-shadow .3s;
+            font-family: 'Inter', Arial, sans-serif;
+        }
+        
+        .chatModal{
+            margin: 0;
+            border-radius: 22px;
+        }
+        
+        .chatWindow {
+            display: flex;
+            flex-direction: column;
+            height: 480px;
+            min-height: 340px;
+            max-height: 80vh;
+            background: #f4f6fb;
+            border-radius: 22px;
+            overflow: hidden;
+            box-shadow: 0 4px 18px #bbb5;
+        }
+        
+        .chatHeader {
+            background: linear-gradient(90deg, #2563eb 50%, #4796ff 100%);
+            color: #fff;
+            padding: 20px 24px 14px 24px;
+            display: flex;
+            align-items: center;
+            place-content: space-between;
+            border-bottom: 1.5px solid #f4f6fb;
+        }
+        
+        .profileIcon {
+            font-size: 0.9em;
+            margin-right: 14px;
+            background: #fff2;
+            padding: 9px 11px 9px 10px;
+            border-radius: 50%;
+        }
+        
+        .profileTitle {
+            font-size: 0.9em;
+            font-weight: 600;
+            margin: 0;
+            letter-spacing: .5px;
+        }
+        
+        .closeChat {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 2em;
+            margin-left: auto;
+            cursor: pointer;
+            transition: color .15s;
+        }
+        
+        .closeChat:hover {
+            color: #e6e6e6;
+        }
+        
+        .chatBody {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            padding: 18px 18px 6px 18px;
+            font-size: 1.09em;
+            display: none;
+        }
+        
+        .result-block, .chatFooter .result-block {
+            background: #f7faff;
+            padding: 12px 14px 8px 14px;
+            margin-top: 4px;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px #d8e2f3a1;
+            font-size: 1.08em;
+            color: #2d3648;
+        }
+
+        .result-block {
+            background: #f7faff;
+            padding: 12px 14px 8px 14px;
+            margin-top: 4px;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px #d8e2f3a1;
+            font-size: 1.08em;
+            color: #2d3648;
+            max-height: 210px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            min-height: 30vh;
+            text-align: center;
+        }
+        
+        .result-item {
+            margin-bottom: 16px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px #b8bede18;
+            padding: 10px 13px 7px 13px;
+            border-left: 4px solid #2563eb22;
+            transition: box-shadow .18s;
+        }
+        
+        .result-item:hover {
+            box-shadow: 0 3px 12px #b8bede44;
+        }
+        
+        .result-item b {
+            color: #2563eb;
+        }
+        
+        .result-item i {
+            color: #3354b6;
+            font-size: 1em;
+        }
+        
+        .result-item hr {
+            border: none;
+            border-top: 1px solid #eef1f5;
+            margin: 14px 0 3px 0;
+        }
+        
+        .sendButton {
+            background: linear-gradient(90deg, #2563eb 50%, #4796ff 100%);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 0 18px;
+            font-size: 1.3em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 45px;
+            min-width: 45px;
+            transition: background .2s;
+            box-shadow: 0 1px 4px #aaa4;
+        }
+        
+        .sendButton:hover {
+            background: #174ea6;
+        }
+        
+        .chatFooter {
+            padding: 13px 20px 14px 20px;
+            background: #f4f6fb;
+            border-top: 1.5px solid #e5eaf3;
+            border-radius: 0 0 22px 22px;
+        }
+        
+        .chatFooter .form-control {
+            border-radius: 12px;
+            padding: 12px 18px;
+            border: 1px solid #cdd6eb;
+            font-size: 1.1em;
+            box-shadow: 0 1px 4px #e6e8f333;
+            margin-right: 9px;
+            outline: none;
+            transition: border .2s;
+        }
+        
+        .chatFooter .form-control:focus {
+            border-color: #2563eb;
+            box-shadow: 0 2px 8px #c9e2ff50;
+        }
+        
+        .chatButton {
+            position: fixed;
+            right: 32px;
+            bottom: 32px;
+            z-index: 1100;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(90deg, #2563eb 60%, #4796ff 100%);
+            color: #fff;
+            border-radius: 50px;
+            box-shadow: 0 2px 18px #2563eb33;
+            cursor: pointer;
+            padding: 12px 28px 12px 18px;
+            font-size: 1.08em;
+            transition: background 0.18s, box-shadow .18s;
+            gap: 14px;
+            border: none;
+        }
+        
+        .chatButton:hover {
+            background: #174ea6;
+            box-shadow: 0 6px 20px #2563eb55;
+        }
+
+        .assistant-bubble {
+            display: inline-block;
+            background: #f1f3f9;
+            color: #222;
+            border-radius: 18px 18px 18px 4px;
+            padding: 12px 18px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+            font-size: 1rem;
+            max-width: 80%;
+            position: relative;
+        }
+        .assistant-bubble:before {
+            content: '';
+            display: block;
+            position: absolute;
+            left: 18px;
+            bottom: -12px;
+            width: 16px;
+            height: 16px;
+            background: #f1f3f9;
+            border-radius: 0 0 16px 16px;
+            transform: rotate(30deg);
+            z-index: 1;
+        }        
+
+        .predefined-dropdown {
+            position: relative;
+            width: 345px;
+            margin: 0 auto 1rem auto;
+        }
+        .dropdown-selected {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: .8rem 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 18px;
+            min-height: 54px;
+        }
+        .dropdown-selected .selected-icon i {
+            font-size: 28px;
+            margin-right: 10px;
+            color: #348ceb;
+        }
+        .dropdown-selected .chevron {
+            margin-left: 10px;
+            font-size: 18px;
+            color: #888;
+            transition: transform .2s;
+        }
+        .predefined-dropdown.open .chevron {
+            transform: rotate(-180deg);
+        }
+        .dropdown-list {
+            display: none;
+            position: absolute;
+            width: 100%;
+            top: 105%;
+            left: 0;
+            z-index: 20;
+            background: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.10);
+            padding: .3rem 0;
+        }
+        .predefined-dropdown.open .dropdown-list {
+            display: block;
+        }
+        .dropdown-option {
+            display: block;
+            padding: .7rem 1rem;
+            cursor: pointer;
+            transition: background .17s;
+        }
+        .dropdown-option:hover, .dropdown-option.active {
+            background: #e9f2fd;
+        }
+        .icon-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .icon-option i {
+            font-size: 24px;
+            color: #348ceb;
+        }
+
+        .result-block--large {
+            min-height: 60vh;
+            min-width: 28vw;
+            justify-self: center;
+        }
+        .d-none { display: none; }
+
+        div.d-flex {
+            display: flex;
+            margin: 0 auto 1rem auto;
+        }
+
+        @media (max-width: 600px) {
+            div#content {
+                width: 98vw;
+                min-width: unset;
+                right: 1vw;
+                bottom: 1vh;
+            }
+            .chatWindow {
+                height: 96vw;
+                max-height: 98vh;
+            }
+        }
+    </style>         
+
+    {* script *}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script n:syntax="off">
+        $(function () {
+            function closeChatOnOutsideClick(event) {
+                if (!$(event.target).closest(".chatWindow, .chatButton").length) {
+                    manageChatWindowAction();
+                }
+            }
+
+            function manageChatWindowAction() {
+                $(".chatModal").toggle();
+
+                if ($(".chatModal").is(":visible")) {
+                    $(".chatBody").scrollTop($(".chatBody")[0].scrollHeight);
+                    $('#frm-chatWindowModalForm .chatFooter .messageInput').focus();
+                    document.addEventListener("click", closeChatOnOutsideClick, false);
+                } else {
+                    document.removeEventListener("click", closeChatOnOutsideClick, false);
+                }
+            }
+
+            $(document).ajaxComplete(function( event, request, settings ) {
+                $(".chatBody").scrollTop($(".chatBody")[0].scrollHeight);
+            });
+
+            $(".chatButton").on("click", function() {
+                manageChatWindowAction();
+            });
+
+            $(".closeChat").on("click", function() {
+                manageChatWindowAction();
+            });
+
+            let typeTextTimeout = null;
+
+            function typeText(element, text, speed = 35, cb = null) {
+                if (typeTextTimeout) clearTimeout(typeTextTimeout);
+            
+                let i = 0;
+                element.textContent = '';
+            
+                function type() {
+                    if (i < text.length) {
+                        element.textContent += text.charAt(i);
+                        i++;
+                        typeTextTimeout = setTimeout(type, speed);
+                    } else if (cb) {
+                        cb();
+                    }
+                }
+                type();
+            }            
+            
+            $(function() {
+                const helloText = 'Ahoj, jak bych ti mohl pomoct?';
+                typeText(document.getElementById('assistant-hello'), helloText, 35);
+            });
+        
+            $(document).on('click', function (e) {
+                if (!$(e.target).closest('.predefined-dropdown').length) {
+                    $('.predefined-dropdown').removeClass('open');
+                }
+            });
+            
+            $(function () {
+                $('.dropdown-selected').on('click', function () {
+                    $(this).closest('.predefined-dropdown').toggleClass('open');
+                });
+            
+                $('.dropdown-option').on('click', function () {
+                    let key = $(this).data('key');
+                    let iconHtml = $(this).find('i').prop('outerHTML');
+                    let labelText = $(this).find('span.icon-option > span').text();
+            
+                    $(this).find('input[type=radio]').prop('checked', true).trigger('change');
+            
+                    let selected = $(this).closest('.predefined-dropdown').find('.selected-icon');
+                    selected.html(iconHtml + '<span>' + labelText + '</span>');
+
+                    $(this).closest('.predefined-dropdown').removeClass('open');
+                });
+
+                $(document).on('click', '.dropdown-option[data-key="contacts"], .dropdown-option[data-key="works"]', function() {
+                    $('input[name="predefined"]').prop('checked', false);
+                    $(this).find('input[name="predefined"]').prop('checked', true);
+                    $('input.form-control.me-2').hide();
+                    $('button.sendButton.ladda-button').hide();
+                });  
+                
+                $(document).on('click', '.dropdown-option[data-key="produkty"]', function() {
+                    $('input[name="predefined"]').prop('checked', false);
+                    $(this).find('input[name="predefined"]').prop('checked', true);
+                    $('input.form-control.me-2').show();
+                    $('button.sendButton.ladda-button').show();
+                });
+
+                $(document).on('click', ' .dropdown-option[data-key="produkty"]', function() {
+                    const helloText = 'Jaké produkty plánuješ vybrat?';
+                    typeText(document.getElementById('assistant-hello'), helloText, 35);
+                });
+    
+                $(document).on('click', ' .dropdown-option[data-key="works"]', function() {
+                    const helloText = 'Tady jsou všechny pracovní nabídky.';
+                    typeText(document.getElementById('assistant-hello'), helloText, 35);
+                });
+
+                $(document).on('click', ' .dropdown-option[data-key="contacts"]', function() {
+                    const helloText = 'Tady jsou všechny kontakty.';
+                    typeText(document.getElementById('assistant-hello'), helloText, 35);
+                });
+
+                $(document).on('click', 'button.sendButton.ladda-button', function() {
+                    const helloText = 'Hledám něco podle tvého požadavku...';
+                    typeText(document.getElementById('assistant-hello'), helloText, 35);
+                });
+                
+                function hideFormLater() {
+                    setTimeout(function() {
+                        $('#frm-chatWindowModalForm').hide();
+                    }, 2500);
+                }
+                
+                $(document).on('click', '.dropdown-option[data-key="works"], .dropdown-option[data-key="contacts"]', function() {
+                    $('input[name="predefined"]').prop('checked', false);
+                    $(this).find('input[name="predefined"]').prop('checked', true);
+                    hideFormLater();
+                    $('.result-block').addClass('result-block--large');
+                });
+                
+                $(document).on('click', 'button.sendButton.ladda-button', function() {
+                    hideFormLater();
+                    $('.result-block').addClass('result-block--large');
+                });    
+                
+                $(document).on('click', 'button > i.fa.fa-angle-double-up.doubleUp', function() {
+                    $('#frm-chatWindowModalForm').hide();
+                    $(this).css('color', 'red');
+                    $('button > i.fa.fa-angle-double-down.doubleDown').last().css('color', 'lawngreen');
+                });
+                
+                $(document).on('click', 'button > i.fa.fa-angle-double-down.doubleDown', function() {
+                    $('#frm-chatWindowModalForm').show();
+                    $(this).css('color', 'red');
+                    $('button > i.fa.fa-angle-double-up.doubleUp').last().css('color', 'lawngreen');
+                });
+            });
+            
+            $(document).on('submit', '#frm-chatWindowModalForm', function(e){
+                e.preventDefault();
+            
+                let text = $(this).find('input[name="text"]').val();
+                let predefined = $(this).find('input[name="predefined"]:checked').val();
+                $.ajax({
+                    url: '/embeddings/control',
+                    method: 'GET',
+                    data: { 
+                        text: text,
+                        predefined: predefined
+                    },
+                    dataType: 'json',
+                    success: function(data){
+                        $('.chatFooter .result-block').remove();
+                        let html = '';
+                        if (Array.isArray(data.result) && data.result.length) {
+                            function renderField(label,value){
+                                if(value === null || value === undefined || value === '') return '';
+                                return `<b>${label}:</b> ${value}<br><br>`;
+                            }
+                            data.result.forEach(function(item) {
+                                let htmlBlock = '<div class="result-item">';
+                                if (item.type === 'product') {
+                                    //htmlBlock += renderField('ID', item.product_id);
+                                    htmlBlock += renderField('Name', item.name);
+                                    htmlBlock += item.path ? `<img src="https://www83.webrex.eu/optokon/${item.path}"><br><br>` : '';
+                                    htmlBlock += renderField('Description', item.description);
+                                    htmlBlock += renderField('Short Description', item.short_description);
+                                    htmlBlock += renderField('Selling price', item.selling_price);
+                                    htmlBlock += item.url ? `<b>Odkaz:</b> <a href="https://www83.webrex.eu/optokon/product/${item.product_id}-${item.url}">${item.url}</a><br><br>` : '';
+                                    //htmlBlock += renderField('Similarita', item.similarity !== undefined ? item.similarity.toFixed(3) : null);
+                                } else if (item.type === 'contacts') {
+                                    //htmlBlock += renderField('ID', item.article_id);
+                                    htmlBlock += renderField('Name', item.name_branche);
+                                    htmlBlock += renderField('Description', item.content_branche);
+                                    //htmlBlock += renderField('Similarita', (typeof item.similarity === 'number') ? item.similarity.toFixed(3) : null);
+                                } else if (item.type === 'works') {
+                                    //htmlBlock += renderField('ID', item.article_id);
+                                    htmlBlock += renderField('NameNew', item.name_new);
+                                    htmlBlock += renderField('PerexNew', item.perex_new);
+                                    htmlBlock += renderField('ContentNew', item.content_new);
+                                    htmlBlock += renderField('PlaceNew', item.place_new);
+                                    //htmlBlock += renderField('Similarita', (typeof item.similarity === 'number') ? item.similarity.toFixed(3) : null);
+                                }
+                                htmlBlock += '</div>';
+                                html += htmlBlock;
+                            });                            
+                        } else {
+                            html += '<i>Nic nenašel, zkus ještě jednou:).</i>';
+                        }
+                        $('.chatFooter').append('<div class="result-block"><b>Výsledek:</b><br>' + html + '</div>');    
+                        $('.chatFooter .result-block').last().css({
+                            'min-height': '60vh',
+                            'min-width': '28vw',
+                            'justify-self': 'center'
+                        });
+                        setTimeout(function() {
+                        $('.fa.fa-angle-double-up.doubleUp').last().css({
+                            'color': 'red'
+                        })
+                        },2500);
+
+                        setTimeout(function() {
+                            $('.fa.fa-angle-double-down.doubleDown').last().css({
+                                'color': 'lawngreen'
+                            })
+                        },2500);
+
+                        $(document).on('click', 'button > i.fa.fa-angle-double-down.doubleDown', function() {
+                            let clickedIcon = $(this);
+                            setTimeout(function() {
+                                $('#frm-chatWindowModalForm').show();
+                                clickedIcon.css({
+                                    'color': 'red'
+                                });
+                                $('.fa.fa-angle-double-up.doubleUp').last().css({
+                                    'color': 'lawngreen'
+                                });
+                            });
+                        });                                         
+                    }  
+                });
+            }); 
+            $(document).on('click', '.dropdown-option[data-key="contacts"], .dropdown-option[data-key="works"]', function() {
+                $('input[name="predefined"]').prop('checked', false);
+                $(this).find('input[name="predefined"]').prop('checked', true);
+                $('#frm-chatWindowModalForm').submit();
+            });                              
+        });
+    </script>
